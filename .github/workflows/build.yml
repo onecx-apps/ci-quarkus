@@ -26,10 +26,6 @@ jobs:
     secrets: inherit
     with:
       push: true
-  sonar:
-    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-sonar.yml@v3
-    needs: [quarkus, liquibase]
-    secrets: inherit
   native:
     if: ${{ inputs.native }}
     uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build-native.yml@v3
@@ -40,22 +36,20 @@ jobs:
   helm:
     if: |
       !cancelled()
-      && needs.sonar.result == 'success'
       && ( !inputs.native || needs.native.result == 'success')
     uses: onecx-apps/ci-common/.github/workflows/helm-build.yml@v3
-    needs: [sonar, native]
+    needs: [native]
     secrets: inherit
     with:
       push: true
   helm-event:
     if: |
       !cancelled()
-      && needs.sonar.result == 'success'
       && needs.helm.result == 'success'
       && ( !inputs.native || needs.native.result == 'success')
       && inputs.helmEventTargetRepository != ''
     uses: onecx-apps/ci-product/.github/workflows/helm-send-event.yml@v1
-    needs: [helm, sonar, native]
+    needs: [helm, native]
     secrets: inherit
     with:
       targetRepository: ${{ inputs.helmEventTargetRepository }}
