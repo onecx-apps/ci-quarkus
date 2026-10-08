@@ -8,11 +8,6 @@ on:
         default: false
         required: false
         type: boolean
-      nativeMulti:
-        description: 'Release multiple architectures x84, arm4, ... native image'
-        default: true
-        required: false
-        type: boolean
       helmEventTargetRepository:
         description: 'Target repository'
         default: ''
@@ -29,26 +24,19 @@ jobs:
     uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v3
     secrets: inherit
   native:
-    if: ${{ inputs.native && !inputs.nativeMulti }}
-    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build-native.yml@v3
+    if: ${{ inputs.native }}
+    uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v3
     secrets: inherit
-    needs: [docker]
     with:
-      push: true
-  nativeMulti:
-    if: ${{ inputs.native && inputs.nativeMulti }}
-    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build-native-multi.yml@v3
-    secrets: inherit
-    needs: [docker]
-    with:
-      push: true
+      releaseImageTag: '{{ .Version }}-native'
+      tags: '{{ .Release }}-native'
   helm:
     if: |
       !cancelled()
       && needs.docker.result == 'success'
-      && ( !inputs.native || needs.native.result == 'success' || needs.nativeMulti.result == 'success')
+      && ( !inputs.native || needs.native.result == 'success')
     uses: onecx-apps/ci-common/.github/workflows/helm-release.yml@v3
-    needs: [docker, native, nativeMulti]
+    needs: [docker, native]
     secrets: inherit
   helm-event:
     if: |
