@@ -13,7 +13,12 @@ on:
         default: ''
         required: false
         type: string
-        
+      helmEventTargetBranch:
+        description: 'Target branch'
+        default: 'main'
+        required: false
+        type: string
+
 jobs:
   docker:
     uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v3
@@ -29,7 +34,7 @@ jobs:
     if: |
       !cancelled()
       && needs.docker.result == 'success'
-      && ( !inputs.native || needs.native.result == 'success')     
+      && ( !inputs.native || needs.native.result == 'success')
     uses: onecx-apps/ci-common/.github/workflows/helm-release.yml@v3
     needs: [docker, native]
     secrets: inherit
@@ -43,10 +48,11 @@ jobs:
     secrets: inherit
     with:
       targetRepository: ${{ inputs.helmEventTargetRepository }}
+      targetBranch: ${{ inputs.helmEventTargetBranch }}
   changelog:
     if: |
       !cancelled()
-      && needs.helm.result == 'success'  
+      && needs.helm.result == 'success'
     uses: onecx-apps/ci-common/.github/workflows/generate-changelog.yml@v3
     needs: [helm]
     secrets: inherit
